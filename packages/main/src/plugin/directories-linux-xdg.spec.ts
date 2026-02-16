@@ -120,20 +120,38 @@ describe('LinuxXDGDirectories', () => {
     });
   });
 
-  describe('getManagedDefaultsDirectory', () => {
-    test('should return linux managed folder path when not running in Flatpak', () => {
+  describe('getManagedDefaultsDirectories', () => {
+    test('should return /etc first, then /usr/share on standard Linux', () => {
       provider = new LinuxXDGDirectories();
 
-      expect(provider.getManagedDefaultsDirectory()).toBe(product.paths.managed.linux);
+      const paths = provider.getManagedDefaultsDirectories();
+
+      expect(paths).toHaveLength(2);
+      expect(paths[0]).toBe('/etc/podman-desktop');
+      expect(paths[1]).toBe(product.paths.managed.linux);
     });
 
-    test('should return flatpak managed folder path when running in Flatpak', () => {
+    test('should return /etc first, then flatpak path when running in Flatpak', () => {
       // biome-ignore lint/complexity/useLiteralKeys: FLATPAK_ID comes from an index signature
       process.env['FLATPAK_ID'] = 'io.podman_desktop.PodmanDesktop';
 
       provider = new LinuxXDGDirectories();
 
-      expect(provider.getManagedDefaultsDirectory()).toBe(product.paths.managed.flatpak);
+      const paths = provider.getManagedDefaultsDirectories();
+
+      expect(paths).toHaveLength(2);
+      expect(paths[0]).toBe('/etc/podman-desktop');
+      expect(paths[1]).toBe(product.paths.managed.flatpak);
+    });
+
+    test('should have /etc with higher priority than /usr/share (first in array)', () => {
+      provider = new LinuxXDGDirectories();
+
+      const paths = provider.getManagedDefaultsDirectories();
+
+      // First element = highest priority (will be checked/merged last)
+      expect(paths[0]).toBe('/etc/podman-desktop');
+      expect(paths.indexOf('/etc/podman-desktop')).toBeLessThan(paths.indexOf(product.paths.managed.linux));
     });
   });
 });

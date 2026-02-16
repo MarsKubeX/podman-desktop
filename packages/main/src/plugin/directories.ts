@@ -25,5 +25,13 @@ export interface Directories {
   getContributionStorageDir(): string;
   getSafeStorageDirectory(): string;
   getDataDirectory(): string;
-  getManagedDefaultsDirectory(): string;
+  /**
+   * Get managed configuration directories in precedence order (highest priority first).
+   * On Linux, this returns ['/etc/podman-desktop', '/usr/share/podman-desktop']
+   * allowing admin overrides in /etc to take precedence over vendor defaults in /usr/share.
+   * This follows the UAPI Configuration Files Specification.
+   *
+   * @returns Array of paths to check for managed configuration files
+   */
+  getManagedDefaultsDirectories(): string[];
 }

@@ -39,29 +39,40 @@ export class LockedConfiguration {
   ) {}
 
   public async getContent(): Promise<{ [key: string]: unknown }> {
-    // Get the managed locked file path from directories
-    const managedLockedFile = join(this.directories.getManagedDefaultsDirectory(), SYSTEM_LOCKED_FILENAME);
-    let managedLockedData = {};
+    const searchPaths = this.directories.getManagedDefaultsDirectories();
+    let mergedLockedConfig: { [key: string]: unknown } = {};
+    let hadParseError = false;
+    let foundAnyLockedConfig = false;
 
-    // It's important that we at least log to console what is happening here, as it's common for logs
-    // to be shared when there are issues loading "managed-by" locked, so having this information in the logs is useful.
-    try {
-      const managedLockedContent = await readFile(managedLockedFile, 'utf-8');
-      managedLockedData = JSON.parse(managedLockedContent);
-      console.log(`[Managed-by]: Loaded managed locked from: ${managedLockedFile}`);
-      this.telemetryInfo = { event: 'managedConfigurationEnabledAndLocked' };
-    } catch (error: unknown) {
-      // Handle file-not-found errors gracefully - this is expected when no managed config exists
-      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-        console.debug(`[Managed-by]: No managed locked file found at ${managedLockedFile}`);
-      } else {
-        // For other errors (like JSON parse errors), log as error
-        console.error(`[Managed-by]: Failed to parse managed locked from ${managedLockedFile}:`, error);
-        this.telemetryInfo = { event: 'lockedConfigurationStartupFailed', eventProperties: error };
+    // Process paths in reverse order (lowest priority first)
+    // so higher priority sources override lower ones
+    for (const managedLockedDirectory of [...searchPaths].reverse()) {
+      const managedLockedFile = join(managedLockedDirectory, SYSTEM_LOCKED_FILENAME);
+      try {
+        const managedLockedContent = await readFile(managedLockedFile, 'utf-8');
+        const managedLockedData = JSON.parse(managedLockedContent);
+        // Merge with existing config (later sources override earlier)
+        mergedLockedConfig = { ...mergedLockedConfig, ...managedLockedData }; // Simple override
+        foundAnyLockedConfig = true;
+        console.log(`[Managed-by]: Loaded managed locked from: ${managedLockedFile}`);
+      } catch (error) {
+        // Handle file-not-found errors gracefully - this is expected when no managed config exists
+        if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+          console.debug(`[Managed-by]: No managed locked file found at ${managedLockedFile}`);
+        } else {
+          // For other errors (like JSON parse errors), log as error
+          console.error(`[Managed-by]: Failed to parse managed locked from ${managedLockedFile}:`, error);
+          hadParseError = true;
+        }
       }
     }
-
-    return managedLockedData;
+    // Set telemetry after loop
+    if (hadParseError) {
+      this.telemetryInfo = { event: 'lockedConfigurationStartupFailed', eventProperties: 'Parse error' };
+    } else if (foundAnyLockedConfig) {
+      this.telemetryInfo = { event: 'managedConfigurationEnabledAndLocked' };
+    }
+    return mergedLockedConfig;
   }
 
   public getTelemetryInfo(): TelemetryInfo | undefined {

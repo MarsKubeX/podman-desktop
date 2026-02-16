@@ -27,9 +27,9 @@ import { LockedConfiguration } from './locked-configuration.js';
 vi.mock('node:fs/promises');
 
 let lockedConfiguration: LockedConfiguration;
-const getManagedDefaultsDirectoryMock = vi.fn();
+const getManagedDefaultsDirectoriesMock = vi.fn();
 const directories = {
-  getManagedDefaultsDirectory: getManagedDefaultsDirectoryMock,
+  getManagedDefaultsDirectories: getManagedDefaultsDirectoriesMock,
 } as unknown as Directories;
 
 beforeEach(() => {
@@ -40,7 +40,7 @@ beforeEach(() => {
 
 describe('LockedConfiguration', () => {
   test('should load managed locked when file exists', async () => {
-    getManagedDefaultsDirectoryMock.mockReturnValue('/test/path');
+    getManagedDefaultsDirectoriesMock.mockReturnValue('/test/path');
     const managedLocked = { locked: ['telemetry.enabled', 'some.other.setting'] };
     vi.mocked(readFile).mockResolvedValue(JSON.stringify(managedLocked));
 
@@ -55,7 +55,7 @@ describe('LockedConfiguration', () => {
   });
 
   test('should handle missing managed locked file gracefully', async () => {
-    getManagedDefaultsDirectoryMock.mockReturnValue('/test/path');
+    getManagedDefaultsDirectoriesMock.mockReturnValue('/test/path');
     const error = new Error('ENOENT: no such file or directory') as NodeJS.ErrnoException;
     error.code = 'ENOENT';
     vi.mocked(readFile).mockRejectedValue(error);
@@ -70,7 +70,7 @@ describe('LockedConfiguration', () => {
   });
 
   test('should handle corrupted managed locked file gracefully', async () => {
-    getManagedDefaultsDirectoryMock.mockReturnValue('/test/path');
+    getManagedDefaultsDirectoriesMock.mockReturnValue('/test/path');
     vi.mocked(readFile).mockResolvedValue('invalid json');
 
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});

@@ -27,9 +27,9 @@ import type { Directories } from './directories.js';
 vi.mock('node:fs/promises');
 
 let defaultConfiguration: DefaultConfiguration;
-const getManagedDefaultsDirectoryMock = vi.fn();
+const getManagedDefaultsDirectoriesMock = vi.fn();
 const directories = {
-  getManagedDefaultsDirectory: getManagedDefaultsDirectoryMock,
+  getManagedDefaultsDirectories: getManagedDefaultsDirectoriesMock,
 } as unknown as Directories;
 
 beforeEach(() => {
@@ -40,7 +40,7 @@ beforeEach(() => {
 
 describe('DefaultConfiguration', () => {
   test('should load managed defaults when file exists', async () => {
-    getManagedDefaultsDirectoryMock.mockReturnValue('/test/path');
+    getManagedDefaultsDirectoriesMock.mockReturnValue(['/test/path']);
     const managedDefaults = { 'managed.setting': 'managedValue' };
     vi.mocked(readFile).mockResolvedValue(JSON.stringify(managedDefaults));
 
@@ -55,7 +55,7 @@ describe('DefaultConfiguration', () => {
   });
 
   test('should handle missing managed defaults file gracefully', async () => {
-    getManagedDefaultsDirectoryMock.mockReturnValue('/test/path');
+    getManagedDefaultsDirectoriesMock.mockReturnValue(['/test/path']);
     const error = new Error('ENOENT: no such file or directory') as NodeJS.ErrnoException;
     error.code = 'ENOENT';
     vi.mocked(readFile).mockRejectedValue(error);
@@ -70,7 +70,7 @@ describe('DefaultConfiguration', () => {
   });
 
   test('should handle corrupted managed defaults file gracefully', async () => {
-    getManagedDefaultsDirectoryMock.mockReturnValue('/test/path');
+    getManagedDefaultsDirectoriesMock.mockReturnValue(['/test/path']);
     vi.mocked(readFile).mockResolvedValue('invalid json');
 
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -90,7 +90,7 @@ describe('DefaultConfiguration', () => {
   });
 
   test('should load managed defaults configuration with valid JSON', async () => {
-    getManagedDefaultsDirectoryMock.mockReturnValue('/test/path');
+    getManagedDefaultsDirectoriesMock.mockReturnValue(['/test/path']);
     const managedDefaults = { 'managed.setting': 'managedValue', 'another.setting': 'anotherValue' };
     vi.mocked(readFile).mockResolvedValue(JSON.stringify(managedDefaults));
 

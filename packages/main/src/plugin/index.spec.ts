@@ -339,6 +339,7 @@ test('configurationRegistry propagated', async () => {
   const apiSenderMock = {} as unknown as ApiSenderType;
   const directoriesMock = {
     getConfigurationDirectory: vi.fn().mockReturnValue(tmpdir()),
+    getManagedDefaultsDirectories: vi.fn().mockReturnValue(['/test/managed/path']),
   } as unknown as Directories;
   const defaultConfigurationMock = {
     getContent: vi.fn().mockResolvedValue({}),

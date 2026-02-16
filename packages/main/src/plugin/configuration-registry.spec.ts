@@ -61,10 +61,10 @@ vi.mock(import('./locked-configuration.js'), () => ({
 let configurationRegistry: ConfigurationRegistry;
 
 const getConfigurationDirectoryMock = vi.fn();
-const getManagedDefaultsDirectoryMock = vi.fn();
+const getManagedDefaultsDirectoriesMock = vi.fn();
 const directories = {
   getConfigurationDirectory: getConfigurationDirectoryMock,
-  getManagedDefaultsDirectory: getManagedDefaultsDirectoryMock,
+  getManagedDefaultsDirectories: getManagedDefaultsDirectoriesMock,
 } as unknown as Directories;
 const apiSender = {
   send: vi.fn(),
@@ -90,7 +90,7 @@ beforeEach(async () => {
   vi.resetAllMocks();
   vi.clearAllMocks();
   getConfigurationDirectoryMock.mockReturnValue('/my-config-dir');
-  getManagedDefaultsDirectoryMock.mockReturnValue('/usr/share/podman-desktop');
+  getManagedDefaultsDirectoriesMock.mockReturnValue(['/usr/share/podman-desktop']);
 
   // Mock basic fs functions needed for initialization
   const readFileSync = vi.mocked(fs.readFileSync);

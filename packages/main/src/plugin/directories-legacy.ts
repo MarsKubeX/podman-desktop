@@ -95,21 +95,31 @@ export class LegacyDirectories implements Directories {
     return this.dataDirectory;
   }
 
-  getManagedDefaultsDirectory(): string {
+  getManagedDefaultsDirectories(): string[] {
+    const paths: string[] = [];
+
     if (isMac()) {
-      return product.paths.managed.macOS;
+      // macOS: Single path (no /etc override concept on macOS)
+      paths.push(product.paths.managed.macOS);
     } else if (isWindows()) {
+      // Windows: Single path (no /etc override concept on Windows)
+      // biome-ignore lint/complexity/useLiteralKeys: PROGRAMDATA comes from an index signature
       const programData = process.env['PROGRAMDATA'] ?? 'C:\\ProgramData';
-      // replace %PROGRAMDATA% in the path
-      return product.paths.managed.windows.replace('%PROGRAMDATA%', programData);
+      paths.push(product.paths.managed.windows.replace('%PROGRAMDATA%', programData));
     } else if (isLinux()) {
+      // Linux: Support /etc override for immutable systems
+      // /etc always comes first (admin overrides)
+      paths.push('/etc/podman-desktop');
+
+      // Then vendor defaults (Flatpak or standard Linux)
       // biome-ignore lint/complexity/useLiteralKeys: FLATPAK_ID comes from an index signature
-      if (process.env['FLATPAK_ID']) {
-        return product.paths.managed.flatpak;
-      }
-      return product.paths.managed.linux;
+      paths.push(process.env['FLATPAK_ID'] ? product.paths.managed.flatpak : product.paths.managed.linux);
+    } else {
+      // Fallback to Linux-style paths
+      paths.push('/etc/podman-desktop');
+      paths.push(product.paths.managed.linux);
     }
-    // Fallback to Linux-style path
-    return product.paths.managed.linux;
+
+    return paths;
   }
 }

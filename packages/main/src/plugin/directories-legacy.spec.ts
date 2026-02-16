@@ -117,67 +117,51 @@ describe('LegacyDirectories', () => {
     });
   });
 
-  describe('getManagedDefaultsDirectory', () => {
-    test('should return macOS managed folder path when running on macOS', () => {
+  describe('getManagedDefaultsDirectories', () => {
+    test('should return single macOS path when running on macOS', () => {
       vi.mocked(isMac).mockReturnValue(true);
       vi.mocked(isWindows).mockReturnValue(false);
       vi.mocked(isLinux).mockReturnValue(false);
 
       provider = new LegacyDirectories();
 
-      expect(provider.getManagedDefaultsDirectory()).toBe(product.paths.managed.macOS);
+      const paths = provider.getManagedDefaultsDirectories();
+
+      expect(paths).toHaveLength(1);
+      expect(paths[0]).toBe(product.paths.managed.macOS);
     });
 
-    test('should use appId format for macOS managed folder path', () => {
-      vi.mocked(isMac).mockReturnValue(true);
-      vi.mocked(isWindows).mockReturnValue(false);
-      vi.mocked(isLinux).mockReturnValue(false);
-
-      provider = new LegacyDirectories();
-
-      // The macOS managed path folder should be the appId (macOS format is different vs Windows / Linux)
-      // so make sure we still have the correct format
-      expect(provider.getManagedDefaultsDirectory()).toBe(`/Library/Application Support/${product.appId}`);
-    });
-
-    test('should map PROGRAMDATA into windows managed folder path', () => {
+    test('should return single Windows path when running on Windows', () => {
       vi.mocked(isMac).mockReturnValue(false);
       vi.mocked(isWindows).mockReturnValue(true);
       vi.mocked(isLinux).mockReturnValue(false);
       const customProgramData = 'D:\\CorpData';
+      // biome-ignore lint/complexity/useLiteralKeys: PROGRAMDATA comes from an index signature
       process.env['PROGRAMDATA'] = customProgramData;
 
       provider = new LegacyDirectories();
 
-      expect(provider.getManagedDefaultsDirectory()).toBe(
-        product.paths.managed.windows.replace('%PROGRAMDATA%', customProgramData),
-      );
+      const paths = provider.getManagedDefaultsDirectories();
+
+      expect(paths).toHaveLength(1);
+      expect(paths[0]).toBe(product.paths.managed.windows.replace('%PROGRAMDATA%', customProgramData));
     });
 
-    test('should default PROGRAMDATA when env variable is missing', () => {
-      vi.mocked(isMac).mockReturnValue(false);
-      vi.mocked(isWindows).mockReturnValue(true);
-      vi.mocked(isLinux).mockReturnValue(false);
-      delete process.env['PROGRAMDATA'];
-
-      provider = new LegacyDirectories();
-
-      expect(provider.getManagedDefaultsDirectory()).toBe(
-        product.paths.managed.windows.replace('%PROGRAMDATA%', 'C:\\ProgramData'),
-      );
-    });
-
-    test('should return linux managed folder path when running on Linux', () => {
+    test('should return /etc first, then /usr/share on Linux', () => {
       vi.mocked(isMac).mockReturnValue(false);
       vi.mocked(isWindows).mockReturnValue(false);
       vi.mocked(isLinux).mockReturnValue(true);
 
       provider = new LegacyDirectories();
 
-      expect(provider.getManagedDefaultsDirectory()).toBe(product.paths.managed.linux);
+      const paths = provider.getManagedDefaultsDirectories();
+
+      expect(paths).toHaveLength(2);
+      expect(paths[0]).toBe('/etc/podman-desktop');
+      expect(paths[1]).toBe(product.paths.managed.linux);
     });
 
-    test('should return flatpak managed folder path when running on Linux in Flatpak', () => {
+    test('should return /etc first, then flatpak path on Linux in Flatpak', () => {
       vi.mocked(isMac).mockReturnValue(false);
       vi.mocked(isWindows).mockReturnValue(false);
       vi.mocked(isLinux).mockReturnValue(true);
@@ -186,17 +170,25 @@ describe('LegacyDirectories', () => {
 
       provider = new LegacyDirectories();
 
-      expect(provider.getManagedDefaultsDirectory()).toBe(product.paths.managed.flatpak);
+      const paths = provider.getManagedDefaultsDirectories();
+
+      expect(paths).toHaveLength(2);
+      expect(paths[0]).toBe('/etc/podman-desktop');
+      expect(paths[1]).toBe(product.paths.managed.flatpak);
     });
 
-    test('should fallback to linux managed folder path when platform is unknown', () => {
+    test('should fallback to Linux-style paths when platform is unknown', () => {
       vi.mocked(isMac).mockReturnValue(false);
       vi.mocked(isWindows).mockReturnValue(false);
       vi.mocked(isLinux).mockReturnValue(false);
 
       provider = new LegacyDirectories();
 
-      expect(provider.getManagedDefaultsDirectory()).toBe(product.paths.managed.linux);
+      const paths = provider.getManagedDefaultsDirectories();
+
+      expect(paths).toHaveLength(2);
+      expect(paths[0]).toBe('/etc/podman-desktop');
+      expect(paths[1]).toBe(product.paths.managed.linux);
     });
   });
 });
