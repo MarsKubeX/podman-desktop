@@ -79,7 +79,7 @@ const directories = {
   getContributionStorageDir: () => '/fake-contribution-storage-directory',
   getSafeStorageDirectory: () => '/fake-safe-storage-directory',
   getDataDirectory: () => '/fake-data-directory',
-  getManagedDefaultsDirectory: () => ['/fake-managed-defaults-directory'],
+  getManagedDefaultsDirectories: () => ['/fake-managed-defaults-directory'],
 } as unknown as Directories;
 
 const defaultConfiguration = {
