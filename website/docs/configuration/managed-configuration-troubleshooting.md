@@ -58,6 +58,28 @@ To verify in the GUI if a value is locked by your managed-by configuration:
 
 4. Confirm that it has the **Managed** label applied.
 
+## Configuration from `/etc` not overriding `/usr/share` (Linux)
+
+On Linux, Podman Desktop reads managed configuration from two locations: `/usr/share/podman-desktop/` (managed defaults) and `/etc/podman-desktop/` (admin overrides). If your `/etc` overrides are not taking effect:
+
+1. Verify the file names are exactly `default-settings.json` and `locked.json` (same as in `/usr/share`).
+2. Ensure the JSON content is valid (use a JSON validator).
+3. Check the startup logs. You should see separate log entries for each location:
+   ```
+   [Managed-by]: Loaded managed defaults from: /usr/share/podman-desktop/default-settings.json
+   [Managed-by]: Loaded managed defaults from: /etc/podman-desktop/default-settings.json
+   ```
+4. If you only see one log entry, the other file is missing or has a syntax error.
+5. Remember that `/etc` values only override keys that are present in the `/etc` file. Keys not listed in the `/etc` file will keep their `/usr/share` values.
+
+## Managed defaults not applied after restart
+
+If the log message `Applied default settings for: ...` does not appear after a restart:
+
+1. The settings may already exist in the user's `settings.json`. Managed defaults are only applied once per setting, when the key does not yet exist in the user's configuration.
+2. Check the user's `settings.json` file at `~/.local/share/containers/podman-desktop/configuration/settings.json` or `~/.config/containers/podman-desktop/settings.json`.
+3. To re-apply managed defaults, remove the specific key from the user's `settings.json` and restart Podman Desktop.
+
 ## File permission issues
 
 On Linux and macOS, managed configuration files must have appropriate permissions:

@@ -104,6 +104,43 @@ This configuration maps to the [registries.conf](https://github.com/containers/i
 }
 ```
 
+## Deploying on immutable Linux systems
+
+On image-based Linux systems, the `/usr/share` directory is read-only and cannot be modified after the image is built. Podman Desktop supports an alternative configuration path at `/etc/podman-desktop/` for these environments.
+
+### Managed defaults baked into the OS image
+
+If you build custom OS images, include managed defaults in the image:
+
+```json title="/usr/share/podman-desktop/default-settings.json"
+{
+  "proxy.http": "http://default-proxy.example.com:8080",
+  "telemetry.enabled": false
+}
+```
+
+### Admin overrides applied at deployment time
+
+After the image is deployed, administrators can add site-specific overrides in `/etc/podman-desktop/`. Values in `/etc` take precedence over `/usr/share`:
+
+```json title="/etc/podman-desktop/default-settings.json"
+{
+  "proxy.http": "http://site-specific-proxy.example.com:3128"
+}
+```
+
+```json title="/etc/podman-desktop/locked.json"
+{
+  "locked": ["proxy.http", "telemetry.enabled"]
+}
+```
+
+In this example:
+
+- `proxy.http` is overridden to the site-specific proxy (`/etc` wins over `/usr/share`)
+- `telemetry.enabled` keeps the default value `false` from `/usr/share` (no override in `/etc`)
+- Both keys are locked and cannot be changed by the user
+
 ## Additional resources
 
 - [Configuring a managed user environment](/docs/configuration/managed-configuration)

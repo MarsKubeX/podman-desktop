@@ -111,7 +111,7 @@ export class LegacyDirectories implements Directories {
       // /etc always comes first (admin overrides)
       paths.push('/etc/podman-desktop');
 
-      // Then vendor defaults (Flatpak or standard Linux)
+      // Then managed defaults (Flatpak or standard Linux)
       // biome-ignore lint/complexity/useLiteralKeys: FLATPAK_ID comes from an index signature
       paths.push(process.env['FLATPAK_ID'] ? product.paths.managed.flatpak : product.paths.managed.linux);
     } else {

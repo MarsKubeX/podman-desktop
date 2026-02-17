@@ -21,6 +21,19 @@ Podman Desktop stores values for the following types of configuration in three s
 2. **Managed defaults configuration** - Read-only administrator-enforced default values that cannot be edited by the user.
 3. **Locked configuration** - Read-only administrator-enforced list of keys that must use managed values.
 
+:::note[Linux: Multi-path configuration hierarchy]
+
+On Linux, Podman Desktop follows the [UAPI Configuration Files Specification](https://uapi-group.org/specifications/specs/configuration_files_specification/) and reads managed configuration from two locations in precedence order:
+
+1. `/etc/podman-desktop/` — Admin overrides (highest priority)
+2. `/usr/share/podman-desktop/` — Managed defaults (lowest priority)
+
+If both locations contain configuration files, values are merged with `/etc` taking precedence. This is particularly useful for **immutable/image-based Linux systems** (Fedora CoreOS, bootc, etc.) where `/usr/share` is read-only and administrators need to place overrides in `/etc`.
+
+On macOS and Windows, a single managed path is used.
+
+:::
+
 ### Default settings
 
 On startup, Podman Desktop checks `default-settings.json` and applies any settings that don't already exist in the user's `settings.json`. This is a one-time copy per setting:
@@ -64,13 +77,25 @@ _Managed defaults_
 
 - Location: `/usr/share/podman-desktop/default-settings.json`
 - Permissions: Root only
-- Purpose: Administrator-enforced configuration values
+- Purpose: Default managed configuration values
+
+_Managed defaults (admin override)_
+
+- Location: `/etc/podman-desktop/default-settings.json`
+- Permissions: Root only
+- Purpose: Admin overrides that take precedence over managed defaults
 
 _Locked configuration_
 
 - Location: `/usr/share/podman-desktop/locked.json`
 - Permissions: Root only
-- Purpose: List of configuration keys that are locked by an administrator
+- Purpose: Default list of configuration keys that are locked
+
+_Locked configuration (admin override)_
+
+- Location: `/etc/podman-desktop/locked.json`
+- Permissions: Root only
+- Purpose: Admin override list of locked keys that take precedence over defaults
 
 </TabItem>
 <TabItem value="mac" label="macOS">
@@ -241,7 +266,12 @@ As an administrator, you can implement several use cases to customize user setti
 
 **Step 1: Create configuration files**
 
-Save the following files at `/usr/share/podman-desktop/`:
+Podman Desktop reads managed configuration from two locations on Linux. Choose the appropriate path based on your deployment:
+
+- `/usr/share/podman-desktop/` — Managed defaults (included in OS images or packages)
+- `/etc/podman-desktop/` — Admin overrides (for site-specific or immutable system configurations)
+
+If both locations contain configuration files, values from `/etc` take precedence over `/usr/share`.
 
 _Managed defaults file:_
 
@@ -252,6 +282,14 @@ _Managed defaults file:_
 }
 ```
 
+_Managed defaults file (admin override, optional):_
+
+```json title="/etc/podman-desktop/default-settings.json"
+{
+  "proxy.http": "http://site-specific-proxy.example.com:3128"
+}
+```
+
 _Locked configuration file:_
 
 ```json title="/usr/share/podman-desktop/locked.json"
@@ -259,6 +297,12 @@ _Locked configuration file:_
   "locked": ["proxy.http", "telemetry.enabled"]
 }
 ```
+
+:::tip[Immutable Linux systems]
+
+On image-based systems where `/usr/share` is read-only, place your configuration files in `/etc/podman-desktop/` instead. Podman Desktop will read from `/etc` even if `/usr/share/podman-desktop/` does not exist.
+
+:::
 
 **Step 2: Deploy using a deployment tool**
 
@@ -271,7 +315,9 @@ Choose a deployment tool: Ansible, Puppet, Chef, Salt, RPM/DEB packages, or shel
 2. Go to **Help > Troubleshooting**, and select the **Logs** tab to check for messages such as:
 
    ```
-   [Managed-by]: Loaded managed ...
+   [Managed-by]: Loaded managed defaults from: /usr/share/podman-desktop/default-settings.json
+   [Managed-by]: Loaded managed defaults from: /etc/podman-desktop/default-settings.json
+   [Managed-by]: Applied default settings for: proxy.http, telemetry.enabled
    ```
 
 3. Verify that locked settings cannot be changed through the UI.
