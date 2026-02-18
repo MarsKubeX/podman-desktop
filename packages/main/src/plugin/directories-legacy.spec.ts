@@ -161,7 +161,7 @@ describe('LegacyDirectories', () => {
       expect(paths[1]).toBe(product.paths.managed.linux);
     });
 
-    test('should return /etc first, then flatpak path on Linux in Flatpak', () => {
+    test('should return /run/host/etc first, then flatpak path on Linux in Flatpak', () => {
       vi.mocked(isMac).mockReturnValue(false);
       vi.mocked(isWindows).mockReturnValue(false);
       vi.mocked(isLinux).mockReturnValue(true);
@@ -173,7 +173,7 @@ describe('LegacyDirectories', () => {
       const paths = provider.getManagedDefaultsDirectories();
 
       expect(paths).toHaveLength(2);
-      expect(paths[0]).toBe('/etc/podman-desktop');
+      expect(paths[0]).toBe(`/run/host/etc/${product.artifactName}`);
       expect(paths[1]).toBe(product.paths.managed.flatpak);
     });
 

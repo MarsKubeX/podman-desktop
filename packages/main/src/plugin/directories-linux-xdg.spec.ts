@@ -131,7 +131,7 @@ describe('LinuxXDGDirectories', () => {
       expect(paths[1]).toBe(product.paths.managed.linux);
     });
 
-    test('should return /etc first, then flatpak path when running in Flatpak', () => {
+    test('should return /run/host/etc first, then flatpak path when running in Flatpak', () => {
       // biome-ignore lint/complexity/useLiteralKeys: FLATPAK_ID comes from an index signature
       process.env['FLATPAK_ID'] = 'io.podman_desktop.PodmanDesktop';
 
@@ -140,7 +140,7 @@ describe('LinuxXDGDirectories', () => {
       const paths = provider.getManagedDefaultsDirectories();
 
       expect(paths).toHaveLength(2);
-      expect(paths[0]).toBe('/etc/podman-desktop');
+      expect(paths[0]).toBe(`/run/host/etc/${product.artifactName}`);
       expect(paths[1]).toBe(product.paths.managed.flatpak);
     });
 

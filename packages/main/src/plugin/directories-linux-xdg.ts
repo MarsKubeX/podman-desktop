@@ -88,15 +88,14 @@ export class LinuxXDGDirectories implements Directories {
 
   getManagedDefaultsDirectories(): string[] {
     const paths: string[] = [];
-
-    // Priority order (highest to lowest):
-    // 1. /etc - Admin overrides (writable even on immutable systems)
-    // 2. /usr or /run/host/usr - Managed defaults (read-only on immutable systems)
-    // /etc always comes first on Linux
-    paths.push('/etc/podman-desktop');
-    // Then add the managed defaults path (differs between Flatpak and standard Linux)
     // biome-ignore lint/complexity/useLiteralKeys: FLATPAK_ID comes from an index signature
-    paths.push(process.env['FLATPAK_ID'] ? product.paths.managed.flatpak : product.paths.managed.linux);
+    const isFlatpak = !!process.env['FLATPAK_ID'];
+    // Priority order (highest to lowest):
+    // 1. /etc (or /run/host/etc in Flatpak) - Admin overrides
+    // 2. /usr/share (or /run/host/usr/share in Flatpak) - Managed defaults
+    // In Flatpak, host paths are accessed via /run/host/ prefix
+    paths.push(isFlatpak ? `/run/host/etc/${product.artifactName}` : `/etc/${product.artifactName}`);
+    paths.push(isFlatpak ? product.paths.managed.flatpak : product.paths.managed.linux);
     return paths;
   }
 }

@@ -107,13 +107,14 @@ export class LegacyDirectories implements Directories {
       const programData = process.env['PROGRAMDATA'] ?? 'C:\\ProgramData';
       paths.push(product.paths.managed.windows.replace('%PROGRAMDATA%', programData));
     } else if (isLinux()) {
-      // Linux: Support /etc override for immutable systems
-      // /etc always comes first (admin overrides)
-      paths.push('/etc/podman-desktop');
-
-      // Then managed defaults (Flatpak or standard Linux)
       // biome-ignore lint/complexity/useLiteralKeys: FLATPAK_ID comes from an index signature
-      paths.push(process.env['FLATPAK_ID'] ? product.paths.managed.flatpak : product.paths.managed.linux);
+      const isFlatpak = !!process.env['FLATPAK_ID'];
+      // Priority order (highest to lowest):
+      // 1. /etc (or /run/host/etc in Flatpak) - Admin overrides
+      // 2. /usr/share (or /run/host/usr/share in Flatpak) - Managed defaults
+      // In Flatpak, host paths are accessed via /run/host/ prefix
+      paths.push(isFlatpak ? `/run/host/etc/${product.artifactName}` : `/etc/${product.artifactName}`);
+      paths.push(isFlatpak ? product.paths.managed.flatpak : product.paths.managed.linux);
     } else {
       // Fallback to Linux-style paths
       paths.push('/etc/podman-desktop');
